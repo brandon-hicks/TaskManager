@@ -17,11 +17,11 @@ export class TasksService {
 
         let tasks = this.getAllTasks();
 
-        if(status){
+        if (status){
             tasks = tasks.filter(task => task.status === status);
         }
 
-        if(search){
+        if (search){
             tasks = tasks.filter(task => task.title.includes(search)||
             task.description.includes(search),);
         }

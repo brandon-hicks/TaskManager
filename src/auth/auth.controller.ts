@@ -6,10 +6,10 @@ import { AuthService } from './auth.service';
 export class AuthController {
     constructor(
         private authservice: AuthService,
-    ) {}
+    ) { }
 
-    @Post('/auth')
-    signUp(@Body() authcredentialsDto: AuthCredentialsDto) {
+    @Post('/signup')
+    signUp(@Body() authcredentialsDto: AuthCredentialsDto): Promise<void> {
         return this.authservice.signUp(authcredentialsDto);
     }
 }

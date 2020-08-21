@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch, Query, UsePipes, ValidationPipe, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Patch, Query, UsePipes, ValidationPipe, ParseIntPipe, UseGuards, Logger } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { GetTasksFilterDto } from './dto/get-tasks-filter.dto';
@@ -6,42 +6,43 @@ import { TaskStatusValidationPipe } from './pipes/task-status-validation.pipes';
 import { Task } from './task.entity';
 import { TaskStatus } from './task-status.enum';
 import { AuthGuard } from '@nestjs/passport';
+import { GetUser } from 'src/auth/get-user.decorator';
+import { User } from 'src/auth/user.entity';
 
 @Controller('/tasks')
+@UseGuards(AuthGuard())
 export class TasksController {
-    constructor(private tasksService: TasksService){}
+    private logger = new Logger('TasksController');
+
+    constructor(private tasksService: TasksService) { }
 
     @Get()
-    @UseGuards(AuthGuard())
-    getTasks(@Query(ValidationPipe) filterDto: GetTasksFilterDto): Promise<Task[]> {
-        return this.tasksService.getTasks(filterDto);
+    getTasks(@Query(ValidationPipe) filterDto: GetTasksFilterDto, @GetUser() user: User): Promise<Task[]> {
+        this.logger.verbose(`User '${user.username}' retrieving all tasks. Filters: ${JSON.stringify(filterDto)}`);
+        return this.tasksService.getTasks(filterDto, user);
     }
 
     @Get('/:id')
-    @UseGuards(AuthGuard())
-    getTaskById(@Param('id', ParseIntPipe) id: number): Promise<Task> {
-        return this.tasksService.getTaskById(id);
+    getTaskById(@Param('id', ParseIntPipe) id: number, @GetUser() user: User): Promise<Task> {
+        return this.tasksService.getTaskById(id, user);
     }
 
     @Post()
     @UsePipes(ValidationPipe)
-    @UseGuards(AuthGuard())
-    createTask(@Body() createTaskDto: CreateTaskDto): Promise<Task> {
-      return this.tasksService.createTask(createTaskDto);
+    createTask(@Body() createTaskDto: CreateTaskDto, @GetUser() user: User,): Promise<Task> {
+        this.logger.verbose(`User '${user.username}' creating a new task. Data: ${JSON.stringify(createTaskDto)}`);
+        return this.tasksService.createTask(createTaskDto, user);
     }
 
     @Patch('/:id/status')
-    @UseGuards(AuthGuard())
     updateTaskStatus(
-        @Param('id', ParseIntPipe) id: number,
-        @Body('status', TaskStatusValidationPipe) status: TaskStatus
-        ): Promise<Task> {
-        return this.tasksService.updateTaskStatus(id,status);
+        @Param('id', ParseIntPipe) id: number, @Body('status', TaskStatusValidationPipe) status: TaskStatus, @GetUser() user: User): Promise<Task> {
+        this.logger.verbose(`User '${user.username}' updated a task status to ${status}`);
+        return this.tasksService.updateTaskStatus(id, status, user);
     }
 
     @Delete('/:id')
-    @UseGuards(AuthGuard())
-    deleteTaskById(@Param('id', ParseIntPipe) id: number): Promise<void> {
-        return this.tasksService.deleteTask(id);
+    deleteTaskById(@Param('id', ParseIntPipe) id: number, @GetUser() user: User): Promise<void> {
+        return this.tasksService.deleteTask(id, user);
     }
- }
+}
